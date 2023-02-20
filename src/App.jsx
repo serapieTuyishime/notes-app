@@ -1,7 +1,7 @@
 import "./App.css";
 import Body from "./components/Body";
 import Sidebar from "./components/Sidebar";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 function App() {
     const [notes, setNotes] = useState(
         () => [localStorage.getItem("notes")] || []

@@ -1,4 +1,3 @@
-import { useState } from "react";
 export default function Body({ note, activeNoteId, updateNote }) {
     return (
         <div className="w-full p-2">
