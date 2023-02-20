@@ -81,7 +81,7 @@ export default function App() {
                         notes={notes}
                         currentNote={findCurrentNote()}
                         setCurrentNoteId={setCurrentNoteId}
-                        // newNote={createNewNote}
+                        newNote={createNewNote}
                         deleteNote={deleteNote}
                     />
                     {currentNoteId && notes.length > 0 && (
