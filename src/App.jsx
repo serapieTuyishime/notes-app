@@ -1,64 +1,107 @@
-import "./App.css";
-import Body from "./components/Body";
+import { React, useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
-import { useState } from "react";
-function App() {
+import Editor from "./components/Editor";
+import Split from "react-split";
+import { nanoid } from "nanoid";
+
+export default function App() {
     const [notes, setNotes] = useState(
-        () => [localStorage.getItem("notes")] || []
+        () => JSON.parse(localStorage.getItem("notes")) || []
     );
-    const [notesCount, setNotesCount] = useState(0);
-    const [activeNote, setActiveNote] = useState(null);
-    const [activeNoteText, setActiveNoteText] = useState(" ");
-    function createNote(name) {
-        const noteObject = { id: notesCount, name };
-        localStorage.setItem("notes", JSON.stringify(noteObject));
-        setNotes([...notes, localStorage.getItem("notes")]);
-        setNotesCount(notesCount + 1);
+    const [currentNoteId, setCurrentNoteId] = useState(
+        (notes[0] && notes[0].id) || ""
+    );
+
+    useEffect(() => {
+        localStorage.setItem("notes", JSON.stringify(notes));
+    }, [notes]);
+
+    function createNewNote() {
+        const newNote = {
+            id: nanoid(),
+            body: "# Type your markdown note's title here",
+        };
+
+        if (!notes) setNotes(newNote);
+        else setNotes((prevNotes) => [newNote, ...prevNotes]);
+
+        setCurrentNoteId(newNote.id);
     }
 
-    function activateNote(clickedNote) {
-        if (notes.length === 0) {
-            console.warn("There are no notes at the moment");
-            return;
-        }
-        let noteIndex = notes.findIndex(
-            (el) => JSON.parse(el).id === clickedNote
-        );
-
-        setActiveNoteText(
-            noteIndex !== -1 ? JSON.parse(notes[noteIndex]).name : "no"
-        );
-        setActiveNote(clickedNote);
-    }
-    function updateNote(text, id) {
-        let noteIndex = notes.findIndex((el) => JSON.parse(el).id === id);
-        let tempNotes = [...notes];
-        tempNotes[noteIndex] = JSON.stringify({
-            id: id,
-            name: text,
+    function updateNote(text) {
+        // Put the most recently-modified note at the top
+        setNotes((oldNotes) => {
+            const newArray = [];
+            for (let i = 0; i < oldNotes.length; i++) {
+                const oldNote = oldNotes[i];
+                if (oldNote.id === currentNoteId) {
+                    newArray.unshift({ ...oldNote, body: text });
+                } else {
+                    newArray.push(oldNote);
+                }
+            }
+            return newArray;
         });
-        setNotes(tempNotes);
-        setActiveNoteText(text);
     }
+
+    /**
+     * Challenge: complete and implement the deleteNote function
+     *
+     * Hints:
+     * 1. What array method can be used to return a new
+     *    array that has filtered out an item based
+     *    on a condition?
+     * 2. Notice the parameters being based to the function
+     *    and think about how both of those parameters
+     *    can be passed in during the onClick event handler
+     */
+
+    function deleteNote(event, noteId) {
+        event.stopPropagation();
+        setNotes((oldNotes) => oldNotes.filter((note) => note.id !== noteId));
+    }
+
+    function findCurrentNote() {
+        return (
+            notes.find((note) => {
+                return note.id === currentNoteId;
+            }) || notes[0]
+        );
+    }
+
     return (
-        <div className="flex w-4/5 mx-auto mt-24 bg-gray-300 lg:w-3/5">
-            <Sidebar
-                createNote={createNote}
-                notes={notes}
-                setNotes={setNotes}
-                setActiveNote={setActiveNote}
-                activeNote={activeNote}
-                setNotesCount={setNotesCount}
-                notesCount={notesCount}
-                activateNote={activateNote}
-            />
-            <Body
-                note={activeNoteText}
-                activeNoteId={activeNote}
-                updateNote={updateNote}
-            />
-        </div>
+        <main className="main">
+            {notes.length > 0 ? (
+                <Split
+                    sizes={[30, 70]}
+                    direction="horizontal"
+                    className="split"
+                >
+                    <Sidebar
+                        notes={notes}
+                        currentNote={findCurrentNote()}
+                        setCurrentNoteId={setCurrentNoteId}
+                        newNote={createNewNote}
+                        deleteNote={deleteNote}
+                    />
+                    {currentNoteId && notes.length > 0 && (
+                        <Editor
+                            currentNote={findCurrentNote()}
+                            updateNote={updateNote}
+                        />
+                    )}
+                </Split>
+            ) : (
+                <div className="flex flex-col items-center justify-center w-full h-full bg-gray-300">
+                    <h1>You have no notes</h1>
+                    <button
+                        className="p-4 text-white border-none rounded-md cursor-pointer bg-primary"
+                        onClick={createNewNote}
+                    >
+                        Create one now
+                    </button>
+                </div>
+            )}
+        </main>
     );
 }
-
-export default App;
